@@ -13,6 +13,8 @@ local M = ns:NewModule("minimap", "Minimap", {
     showCalendar = true,
     mouseWheelZoom = true,
     rightClickTracking = true,
+    zoom = 0,          -- 0 is as far out as the client goes
+    lockZoom = true,   -- put it back when the game moves it
 })
 
 local db
@@ -352,6 +354,40 @@ local function PlaceClock()
 end
 
 --------------------------------------------------------------------------------
+-- Zoom
+--
+-- The client offers a fixed ladder of zoom levels and 0 is the bottom rung.
+-- Nothing widens the map past it: the ground each level covers is baked into the
+-- client rather than handed to addons, and a bigger frame spends more pixels on
+-- the same ground rather than showing more of it.
+--
+-- What can be fixed is the drift. The game moves the zoom on its own, walking
+-- indoors and back out and again at login, so a map left fully out does not stay
+-- fully out. Pinning it is the part the user actually feels.
+--------------------------------------------------------------------------------
+
+local function MaxZoom()
+    local levels = Minimap.GetZoomLevels and Minimap:GetZoomLevels()
+    if type(levels) ~= "number" or levels < 1 then levels = 6 end
+    return levels - 1
+end
+M.MaxZoom = MaxZoom
+
+local function ApplyZoom()
+    if not db then return end
+
+    local wanted = math.max(0, math.min(db.zoom or 0, MaxZoom()))
+
+    -- Setting the zoom fires MINIMAP_UPDATE_ZOOM, which lands back in here.
+    -- Leaving early when it already matches is what stops that being a loop, so
+    -- this test is load bearing rather than an optimisation.
+    if Minimap:GetZoom() == wanted then return end
+
+    Minimap:SetZoom(wanted)
+end
+M.ApplyZoom = ApplyZoom
+
+--------------------------------------------------------------------------------
 -- Input
 --------------------------------------------------------------------------------
 
@@ -360,11 +396,15 @@ local function HookInput()
         Minimap:EnableMouseWheel(true)
         Minimap:SetScript("OnMouseWheel", function(self, delta)
             local zoom = self:GetZoom()
-            if delta > 0 then
-                if zoom < self:GetZoomLevels() - 1 then self:SetZoom(zoom + 1) end
-            elseif zoom > 0 then
-                self:SetZoom(zoom - 1)
-            end
+            local wanted = (delta > 0) and math.min(zoom + 1, MaxZoom())
+                or math.max(zoom - 1, 0)
+
+            if wanted == zoom then return end
+
+            -- Written down before the zoom moves, so the lock reads the wheel as
+            -- the new intent instead of dragging it straight back.
+            db.zoom = wanted
+            self:SetZoom(wanted)
         end)
     end
 
@@ -389,6 +429,7 @@ end
 function M:OnSettingsChanged()
     if not holder then return end
     self:ApplySize()
+    ApplyZoom()
     PlaceCornerWidgets()
     PlaceClock()
     SetupLFGEye()
@@ -412,6 +453,7 @@ function M:OnEnable(settings)
     SetupLFGEye()
     HookInput()
     self:ApplySize()
+    ApplyZoom()
     UpdateZoneText()
 
     if coords then
@@ -434,6 +476,7 @@ function M:OnEnable(settings)
     events:RegisterEvent("ZONE_CHANGED_NEW_AREA")
     events:RegisterEvent("PLAYER_ENTERING_WORLD")
     events:RegisterEvent("ADDON_LOADED")
+    events:RegisterEvent("MINIMAP_UPDATE_ZOOM")
     -- The eye is protected, so a login that lands in combat cannot touch it.
     -- Try again the moment combat drops.
     events:RegisterEvent("PLAYER_REGEN_ENABLED")
@@ -447,7 +490,14 @@ function M:OnEnable(settings)
             SetupLFGEye()
             return
         end
+        if event == "MINIMAP_UPDATE_ZOOM" then
+            -- The game moved the zoom, which is what it does on the way indoors
+            -- and back out again.
+            if db.lockZoom then ApplyZoom() end
+            return
+        end
         UpdateZoneText()
+        if db.lockZoom then ApplyZoom() end
         if event == "PLAYER_ENTERING_WORLD" then
             -- Other addons like to re-round the mask on load. Take it back.
             Minimap:SetMaskTexture(ns.SOLID)

@@ -295,6 +295,10 @@ local function BuildMinimapPage(panel)
         function() return ns.db.minimap.size end,
         function(v) ns.db.minimap.size = v ns.Refresh("minimap") end)), 10, -20)
 
+    left(track(MakeSlider(panel, "Zoom (0 shows the most ground)", 0, 5, 1,
+        function() return ns.db.minimap.zoom end,
+        function(v) ns.db.minimap.zoom = v ns.Refresh("minimap") end)), 0, -24)
+
     left(track(MakeSlider(panel, "Border thickness", 0, 8, 1,
         function() return ns.db.minimap.borderSize end,
         function(v) ns.db.minimap.borderSize = v ns.Refresh("minimap") end)), 0, -24)
@@ -320,6 +324,11 @@ local function BuildMinimapPage(panel)
     right(track(MakeCheck(panel, "Mouse wheel zoom", nil,
         function() return ns.db.minimap.mouseWheelZoom end,
         function(v) ns.db.minimap.mouseWheelZoom = v end)), 0, -4)
+
+    right(track(MakeCheck(panel, "Keep this zoom",
+        "The game re-zooms the minimap by itself walking indoors and out. This puts it back.",
+        function() return ns.db.minimap.lockZoom end,
+        function(v) ns.db.minimap.lockZoom = v ns.Refresh("minimap") end)), 0, -4)
 
     right(track(MakeCheck(panel, "Right click opens tracking", nil,
         function() return ns.db.minimap.rightClickTracking end,

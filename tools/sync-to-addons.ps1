@@ -25,3 +25,7 @@ if ($LASTEXITCODE -ge 8) {
 }
 
 "Synced to $dest. Run /reload in game."
+
+# Robocopy's exit code means "what did I do", not "did I fail", and leaving it
+# in place makes a successful sync look like a failed command to every caller.
+exit 0

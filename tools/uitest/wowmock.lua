@@ -123,6 +123,8 @@ DefineType("Frame", {
     "SetObeyStepOnDrag", "SetThumbTexture", "SetValue", "Raise", "Lower",
     "SetAlpha", "SetScale", "SetHitRectInsets", "SetPropagateKeyboardInput",
     "RegisterEvent", "UnregisterEvent", "RegisterUnitEvent", "SetID",
+    "SetParent", "SetStatusBarTexture", "SetStatusBarColor", "SetFillStyle",
+    "SetReverseFill", "SetRotatesTexture", "SetMaskTexture", "SetZoom",
     "SetBackdrop", "SetNormalTexture", "SetHighlightTexture", "Click",
     "SetFocus", "ClearFocus", "SetAutoFocus", "SetMultiLine", "SetMaxLetters",
     "HighlightText", "SetCursorPosition", "Disable", "Enable", "SetEnabled",
@@ -147,8 +149,27 @@ local function NewFrame(kind, name, parent)
     f.SetSize = function(self, w, h) self.w, self.h = w, h end
     f.SetWidth = function(self, w) self.w = w end
     f.SetHeight = function(self, h) self.h = h end
+    f.GetParent = function(self) return self.parent end
+    f.GetStatusBarTexture = function(self)
+        self.statusTex = self.statusTex or NewTexture()
+        return self.statusTex
+    end
+
+    -- The minimap ladder. Six levels, 0 the widest, exactly as the client.
+    f.GetZoomLevels = function() return 6 end
+    f.GetZoom = function(self) return self.zoomLevel or 0 end
+    f.SetZoom = function(self, v) self.zoomLevel = v end
+
     f.GetWidth = function(self) return self.w end
     f.GetHeight = function(self) return self.h end
+
+    -- Screen edges. The real client returns nil for an unanchored frame, but a
+    -- number here is what lets the screen clamping in Buttons:Fit run at all,
+    -- and that path is reachable from any settings change.
+    f.GetLeft = function(self) return 100 end
+    f.GetRight = function(self) return 100 + self.w end
+    f.GetBottom = function(self) return 100 end
+    f.GetTop = function(self) return 100 + self.h end
     f.GetSize = function(self) return self.w, self.h end
     f.SetPoint = function(self, p, ...) self.points[#self.points + 1] = p end
     f.ClearAllPoints = function(self) self.points = {} end
@@ -268,6 +289,28 @@ IsInGuild = function() return false end
 IsInRaid = function() return false end
 IsInGroup = function() return false end
 GetNumGroupMembers = function() return 0 end
+
+-- Zone and position, for the minimap module.
+GetMinimapZoneText = function() return "Hellfire Peninsula" end
+GetZoneText = function() return "Hellfire Peninsula" end
+GetSubZoneText = function() return "" end
+GetRealZoneText = function() return "Hellfire Peninsula" end
+GetZonePVPInfo = function() return "contested" end
+
+-- Experience, for the XP bar module. Mid level, part rested.
+UnitXP = function() return 4200 end
+UnitXPMax = function() return 12000 end
+GetXPExhaustion = function() return 3000 end
+IsXPUserDisabled = function() return false end
+GetRestState = function() return 1, "Rested", 1.5 end
+
+-- A watched reputation, so the bar's faction path runs too.
+GetWatchedFactionInfo = function() return "Cenarion Expedition", 5, 15000, 21000, 18500 end
+C_Map = C_Map or {}
+C_Map.GetBestMapForUnit = function() return 1944 end
+C_Map.GetPlayerMapPosition = function()
+    return { GetXY = function() return 0.5, 0.5 end, x = 0.5, y = 0.5 }
+end
 UnitIsGroupLeader = function() return false end
 C_ChatInfo = { RegisterAddonMessagePrefix = function() return true end, SendAddonMessage = noop }
 SendAddonMessage = noop
