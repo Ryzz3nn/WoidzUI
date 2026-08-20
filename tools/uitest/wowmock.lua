@@ -304,8 +304,21 @@ GetXPExhaustion = function() return 3000 end
 IsXPUserDisabled = function() return false end
 GetRestState = function() return 1, "Rested", 1.5 end
 
--- A watched reputation, so the bar's faction path runs too.
-GetWatchedFactionInfo = function() return "Cenarion Expedition", 5, 15000, 21000, 18500 end
+-- A watched reputation, so the bar's faction path runs too. Deliberately the
+-- Anniversary shape: that client has no GetWatchedFactionInfo at all, only
+-- C_Reputation.GetWatchedFactionData, and mocking the global the addon cannot
+-- actually call is how a live error stayed invisible to this harness.
+C_Reputation = C_Reputation or {}
+C_Reputation.GetWatchedFactionData = function()
+    return {
+        name = "Cenarion Expedition",
+        factionID = 942,
+        standingID = 5,
+        currentReactionThreshold = 15000,
+        nextReactionThreshold = 21000,
+        currentStandingValue = 18500,
+    }
+end
 C_Map = C_Map or {}
 C_Map.GetBestMapForUnit = function() return 1944 end
 C_Map.GetPlayerMapPosition = function()

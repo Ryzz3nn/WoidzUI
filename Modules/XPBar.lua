@@ -1219,6 +1219,33 @@ function M:Tick()
     self:UpdateRows()
 end
 
+-- The watched reputation, whichever way this client spells it.
+--
+-- GetWatchedFactionInfo does not exist on the Anniversary client: reputation
+-- moved to C_Reputation.GetWatchedFactionData, which hands back one table
+-- instead of five returns. Calling the old global here was a live error, logged
+-- by BugSack every time the bar tried to draw a reputation.
+--
+-- Both are tested rather than the interface number, because the same addon
+-- folder is expected to run on whatever client it is dropped into, and a
+-- version check would have to be revised every time Blizzard moves the line.
+local function WatchedFaction()
+    local modern = C_Reputation and C_Reputation.GetWatchedFactionData
+    if modern then
+        local data = modern()
+        if not data then return nil end
+        return data.name, data.standingID, data.currentReactionThreshold,
+            data.nextReactionThreshold, data.currentStandingValue
+    end
+
+    if GetWatchedFactionInfo then
+        return GetWatchedFactionInfo()
+    end
+
+    return nil
+end
+M.WatchedFaction = WatchedFaction
+
 function M:Update(gained)
     if not bar then return end
 
@@ -1226,7 +1253,7 @@ function M:Update(gained)
 
     if AtMaxLevel() or xpOff then
         if db.repAtMax then
-            local name, standing, minv, maxv, value = GetWatchedFactionInfo()
+            local name, standing, minv, maxv, value = WatchedFaction()
             if name and name ~= "" then
                 local span = (maxv or 0) - (minv or 0)
                 local cur = (value or 0) - (minv or 0)
@@ -1406,7 +1433,7 @@ function M:ShowTooltip()
     GameTooltip:SetOwner(bar, "ANCHOR_TOP")
 
     if bar.mode == "rep" then
-        local name, standing, minv, maxv, value = GetWatchedFactionInfo()
+        local name, standing, minv, maxv, value = WatchedFaction()
         GameTooltip:AddLine(name or "")
         GameTooltip:AddLine(_G["FACTION_STANDING_LABEL" .. (standing or 4)] or "", 1, 1, 1)
         GameTooltip:AddDoubleLine("Progress",
