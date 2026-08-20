@@ -217,7 +217,13 @@ local function NewFrame(kind, name, parent)
 end
 
 function CreateFrame(kind, name, parent, template)
-    return NewFrame(kind, name, parent)
+    local f = NewFrame(kind, name, parent)
+
+    -- The client puts a named frame in the global table, and addon code looks
+    -- frames up that way rather than holding every reference.
+    if name then _G[name] = f end
+
+    return f
 end
 
 -- ---------------------------------------------------------------------------

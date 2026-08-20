@@ -424,6 +424,11 @@ end
 
 function M:OnEnable(settings)
     db = settings
+
+    -- Shift clicking a reagent into the auction search works in the trade skill
+    -- window and not in the Craft one that enchanting still uses. This puts it
+    -- where the client left it out.
+    if ns.CraftLinks then ns.CraftLinks.Enable() end
 end
 
 -- Changing the price source changes what every cached number meant, so the

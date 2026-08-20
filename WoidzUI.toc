@@ -21,6 +21,7 @@ Modules\PartyQuests.lua
 
 Modules\Professions\Data.lua
 Modules\Professions\Prices.lua
+Modules\Professions\CraftLinks.lua
 Modules\Professions\Tracker.lua
 Modules\Professions.lua
 
