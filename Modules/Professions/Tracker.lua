@@ -217,6 +217,43 @@ function M:Compose()
 end
 
 --------------------------------------------------------------------------------
+-- Clicking a row
+--
+-- Shift clicking an item is a verb the game already owns: with the auction house
+-- open it fills the search box, with chat open it inserts the link, and with a
+-- socket or a dressing room open it does those instead. All of that lives behind
+-- HandleModifiedItemClick, so the row hands it a link and lets the client decide.
+-- Writing the auction house search directly would be one of those behaviours
+-- reimplemented badly and the other three lost.
+--------------------------------------------------------------------------------
+
+local function ItemLink(id, fallbackName)
+    if not id then return nil end
+
+    local _, link = GetItemInfo(id)
+    if link then return link end
+
+    -- Cold cache. The client answers a request for an item it has never seen,
+    -- but not in time for this click, so a link is assembled by hand from what
+    -- the guide already knows. It is a real link: GetItemInfo reads it, chat
+    -- accepts it, and the next click gets the client's own.
+    if C_Item and C_Item.RequestLoadItemDataByID then
+        C_Item.RequestLoadItemDataByID(id)
+    end
+
+    return "|cffffffff|Hitem:" .. id .. "|h[" .. (fallbackName or ("item:" .. id)) .. "]|h|r"
+end
+
+local function OnRowClick(self)
+    local link = ItemLink(self.wuiItemId, self.wuiItemName)
+    if not link then return end
+
+    -- Returns false when no modifier was held, which is the case where a click
+    -- on the panel should do nothing at all.
+    if HandleModifiedItemClick then HandleModifiedItemClick(link) end
+end
+
+--------------------------------------------------------------------------------
 -- Frame
 --------------------------------------------------------------------------------
 
@@ -251,6 +288,13 @@ local function Row(index)
     row.divider:SetTexture(ns.SOLID)
     row.divider:SetVertexColor(1, 1, 1, 0.08)
     row.divider:Hide()
+
+    -- Font strings take no clicks, so the row gets an invisible button over the
+    -- top of it. It carries no texture, so the text underneath still reads.
+    row.hit = CreateFrame("Button", nil, panel.body)
+    row.hit:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    row.hit:SetScript("OnClick", OnRowClick)
+    row.hit:Hide()
 
     panel.rows[index] = row
     return row
@@ -368,6 +412,7 @@ function M:Refresh()
         row.right:Hide()
         row.divider:Hide()
         row.meter:Hide()
+        row.hit:Hide()
     end
 
     if db.collapsed then
@@ -398,6 +443,29 @@ function M:Refresh()
         end
 
         local indent = item.indent or 0
+
+        -- Only rows that stand for an item can be clicked. A note, a divider or
+        -- the running total has nothing to link, and a click there should not
+        -- quietly do nothing surprising.
+        local itemId, itemName
+        if item.kind == "mat" and item.mat then
+            itemId, itemName = item.mat.id, item.mat.name
+        elseif item.kind == "step" and item.step then
+            itemId, itemName = item.step.craftItemId, item.step.craft
+        end
+
+        if itemId then
+            row.hit.wuiItemId = itemId
+            row.hit.wuiItemName = itemName
+            row.hit:ClearAllPoints()
+            row.hit:SetPoint("TOPLEFT", panel.body, "TOPLEFT", indent, -y)
+            row.hit:SetSize(math.max(10, usable - indent), lineHeight)
+            row.hit:Show()
+        else
+            row.hit.wuiItemId = nil
+            row.hit.wuiItemName = nil
+            row.hit:Hide()
+        end
 
         -- Meter first, so the text below draws over it.
         local frac, colour

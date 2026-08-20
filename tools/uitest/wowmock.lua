@@ -415,6 +415,13 @@ IsShiftKeyDown = function() return false end
 IsControlKeyDown = function() return false end
 IsAltKeyDown = function() return false end
 IsModifiedClick = function() return false end
+
+-- Shift clicking is routed by the client: auction house search, chat link,
+-- socket, dressing room. The harness only needs it to exist so a click handler
+-- can hand it a link, and a test can stand in front of it.
+HandleModifiedItemClick = function() return false end
+C_Item = C_Item or {}
+C_Item.RequestLoadItemDataByID = function() end
 ChatEdit_GetActiveWindow = function() return nil end
 ChatEdit_InsertLink = function() return false end
 GetSpellLink = function() return nil end
