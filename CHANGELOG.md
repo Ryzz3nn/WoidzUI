@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.6.0
+
+- Minimap: a zoom setting, and an option to keep it there. Zero is as far out as
+  the client will go, but the game re-zooms on the way indoors and back out, so a
+  map left fully out did not stay that way. The wheel still overrides it.
+- Professions: shift click a row in the levelling guide to link the item. With
+  the auction house open that fills the search box, with chat open it inserts the
+  link, the same as shift clicking a reagent anywhere else.
+- Professions: the same click now works in the Craft window that enchanting uses.
+  Its reagent buttons carried no click handler at all, which is why the click
+  worked in blacksmithing and did nothing under enchanting.
+- XP bar: fixed an error every time the bar drew a watched reputation. The
+  Anniversary client has no GetWatchedFactionInfo; reputation moved to
+  C_Reputation.GetWatchedFactionData, and both are now read.
+
 ## 0.5.0
 
 First public release.
