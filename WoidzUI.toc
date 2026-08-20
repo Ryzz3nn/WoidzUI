@@ -1,0 +1,27 @@
+## Interface: 20506
+## Title: WoidzUI
+## Notes: Modular UI suite. Square minimap, a button tray, a free floating XP bar, party quest line tracking, and profession levelling with auction house costs.
+## Author: Ryzz3nn
+## Version: 0.5.0
+## SavedVariables: WoidzUIDB
+## IconTexture: Interface\Icons\INV_Misc_Map_01
+## OptionalDeps: Questie, TradeSkillMaster, Auctionator
+
+Core.lua
+Style.lua
+
+Modules\Minimap.lua
+Modules\Buttons.lua
+Modules\XPBar.lua
+
+Modules\PartyQuests\Chain.lua
+Modules\PartyQuests\Roster.lua
+Modules\PartyQuests\Sync.lua
+Modules\PartyQuests.lua
+
+Modules\Professions\Data.lua
+Modules\Professions\Prices.lua
+Modules\Professions\Tracker.lua
+Modules\Professions.lua
+
+Config.lua

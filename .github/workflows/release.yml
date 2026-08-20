@@ -1,0 +1,27 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      # The packager reads tags and history to build the changelog, so the
+      # default shallow clone is not enough.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: BigWigsMods/packager@v2
+        env:
+          GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # Nothing to upload to CurseForge or WoWInterface, and the game
+          # flavour comes off the TOC interface version on its own.
+          pandoc: "false"

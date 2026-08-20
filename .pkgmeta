@@ -1,0 +1,11 @@
+package-as: WoidzUI
+
+enable-nolib-creation: no
+
+ignore:
+  - .github
+  - .gitignore
+  - .pkgmeta
+  - DESIGN.md
+  - README.md
+  - tools
